@@ -3,6 +3,7 @@ const constants = require('../src/constants');
 const nbt = require('prismarine-nbt');
 const helper = require('../src/helper');
 const utils = require('util');
+const essence = require('../src/constants/essencecosts');
 const parseNbt = utils.promisify(nbt.parse);
 
 const getBackpackContents = async function (arraybuf) {
@@ -89,7 +90,7 @@ const parseItems = async function (base64, db) {
 
       if (ExtraAttributes.rarity_upgrades > 0 && ExtraAttributes.originTag) {
         if (ExtraAttributes.enchantments || constants.talismans[itemId]) {
-          price += db['recombobulator_3000'] / 2;
+          price += db['recombobulator_3000'] * 0.7;
         }
       }
 
@@ -109,13 +110,46 @@ const parseItems = async function (base64, db) {
         }
       }
 
-      if (ExtraAttributes.dungeon_item_level > 5) {
-        const starsUsed = ExtraAttributes.dungeon_item_level - 5;
+      if (ExtraAttributes.dungeon_item_level) {
+        let excessstars = ExtraAttributes.dungeon_item_level ?? 0;
+        if(ExtraAttributes.dungeon_item_level > 5) {
+          const starsUsed = ExtraAttributes.dungeon_item_level - 5;
+          excessstars = ExtraAttributes.dungeon_item_level - starsUsed;
 
-        for (const star of Array(starsUsed).keys()) {
-          price += db[constants.master_stars[star]] ?? 0;
+          for (const stars of Array(starsUsed).keys()) {
+            price += (db[constants.master_stars[stars]] ?? 0);
+          }
+        }
+        if(excessstars <= 5) {
+          const essencesthing = {
+            0: "dungeonize",
+            1: "1",
+            2: "2",
+            3: "3",
+            4: "4",
+            5: "5",
+          }
+          for(let i = 0; i < excessstars + 1; i++) {
+            if(!essence.costs[ExtraAttributes.id].dungeonize && i === 0) {
+              continue;
+            } else {
+              price += (essence.costs[ExtraAttributes.id][essencesthing[i]] * essence.essenceprices[essence.costs[ExtraAttributes.id].type] ?? 0) * 0.7;
+            }
+          }
         }
       }
+
+        if(ExtraAttributes.hot_potato_count) {
+        if(ExtraAttributes.hot_potato_count > 10) {
+          const fumings = ExtraAttributes.hot_potato_count - 10;
+          price += ((db['fuming_potato_book'] ?? 0) * 0.6) * fumings;
+        }else if(ExtraAttributes.hot_potato_count <= 10) {
+          price += (db['hot_potato_book'] ?? 0) * ExtraAttributes.hot_potato_count;
+        }
+      }
+        if(ExtraAttributes.art_of_war_count && ExtraAttributes.art_of_war_count > 0) {
+          price += (db["the_art_of_war"] ?? 0) * 0.6;
+        }
 
       if (ExtraAttributes.ability_scroll) {
         for (const item of Object.values(ExtraAttributes.ability_scroll)) {
@@ -123,9 +157,14 @@ const parseItems = async function (base64, db) {
         }
       }
 
-      if (ExtraAttributes.gemstone_slots) {
-        price += ExtraAttributes.gemstone_slots * db['gemstone_chamber'];
+
+      if(ExtraAttributes.id.includes("DIVAN_") && !ExtraAttributes.id.includes("FRAG" || "DRILL" || "ALLOY")) {
+        if ((ExtraAttributes.gemstone_slots ?? ExtraAttributes["gems"]["unlocked_slots"]) !== undefined) {
+          const slots = ExtraAttributes.gemstone_slots ?? ExtraAttributes["gems"]["unlocked_slots"].length;
+          price += slots * (db['gemstone_chamber'] ?? 0) * 0.85;
+        }
       }
+
 
       if (ExtraAttributes.drill_part_upgrade_module) {
         price += db[ExtraAttributes.drill_part_upgrade_module] ?? 0;
@@ -141,6 +180,13 @@ const parseItems = async function (base64, db) {
 
       if (ExtraAttributes.ethermerge > 0) {
         price += db['etherwarp_conduit'] ?? 0;
+      }
+
+      if(ExtraAttributes.enchantments && ExtraAttributes.id !== "STONK_PICKAXE") {
+        if(ExtraAttributes.enchantments.efficiency && ExtraAttributes.enchantments.efficiency > 5) {
+          const silexsUsed = ExtraAttributes.enchantments.efficiency - 5;
+          price += ((db['sil_ex'] ?? 0) * silexsUsed) * 0.6;
+        }
       }
 
       item.price = price ?? 0;

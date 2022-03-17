@@ -34,7 +34,7 @@ router.post('/categories', async (req, res) => {
 
     return res.status(200).json({
       status: 200,
-      data: await networthGenerator.getNetworth(items, profile)
+      data: await networthGenerator.getNetworth(items, profile, prices)
     });
   } catch (e) {
     return createJsonResponse(res, 500, 'An internal server error occurred.');
@@ -51,12 +51,13 @@ router.post('/total', async (req, res) => {
       return createJsonResponse(res, 404, 'This player has their inventory API disabled.');
     }
 
-    const data = await networthGenerator.getNetworth(items, profile);
+    const data = await networthGenerator.getNetworth(items, profile, prices);
 
     const output = {
       total: data.networth + (data.purse + data.bank),
       purse: data.purse,
-      bank: data.bank
+      bank: data.bank,
+      irl: data.irl,
     };
 
     return res.status(200).json({

@@ -3,6 +3,8 @@ const cluster = require('cluster');
 const path = require('path');
 const os = require('os');
 const app = express();
+const jwt = require('express-jwt');
+const jwksRsa = require('jwks-rsa');
 
 const ValidateBody = require('./middleware/validateBody');
 const ErrorHandler = require('./middleware/errorHandler');
@@ -34,6 +36,7 @@ const createCluster = function () {
 };
 
 const startWebService = async function () {
+
   app.use(express.static(path.join(__dirname, 'public')));
 
   app.use(express.json({ limit: '15mb' }));
@@ -42,12 +45,12 @@ const startWebService = async function () {
   app.use(ValidateBody);
   app.use(ErrorHandler);
 
-  app.use('/api/auctions', Auctions);
-  app.use('/api/bazaar', Bazaar);
-  app.use('/api/networth', Networth);
-  app.use('/api/leaderboard', Leaderboard);
-  app.use('/api/forge', ForgeProfits);
-  app.use('/api/stats', ApiStats);
+  app.use('/maro/auctions', Auctions);
+  app.use('/maro/bazaar', Bazaar);
+  app.use('/maro/leaderboard', Leaderboard);
+  app.use('/maro/forge', ForgeProfits);
+  app.use('/maro/stats', ApiStats);
+  app.use('/maro/networth', Networth);
 
   app.use(NotFound);
 

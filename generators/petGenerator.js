@@ -65,10 +65,26 @@ const getPetPrice = function (pet, db) {
   }
 
   if (pet.candyUsed > 0 && pet.type != 'ENDER_DRAGON') {
-    const reducedValue = price / 1.538232;
+    const reducedValue = price / (1 + (pet.candyUsed / 10 + 0.038232));
 
     price = reducedValue;
   }
+
+    if(pet.skin) {
+      let petSkinPrice = db[`pet_skin_${pet.skin.toString()}`.toLowerCase()] ?? 0;
+      if (petSkinPrice > 999999999) {
+        petSkinPrice = petSkinPrice * 0.1;
+      } else if(petSkinPrice > 249999999) {
+        petSkinPrice = petSkinPrice * 0.15;
+      } else if (petSkinPrice > 0){
+        petSkinPrice = petSkinPrice * 0.4;
+      } else {
+        petSkinPrice = 0;
+      }
+      price += petSkinPrice;
+    }
+
+
 
   pet.price = price;
   pet.modified = { name: `[Lvl ${data.level}] ${helper.capitalize(`${pet.tier} ${pet.type}`)} ${pet.skin ? '✦' : ''}` };
